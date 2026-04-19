@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Piramida 13-kątna - OpenGL 1.1</title>
+    <script src="glsim.js"></script>
+    <script>
+        let rotateX = 15;
+        let rotateY = -15;
+        let rotateZ = 0;
+
+        function Poly(r_col, g, b, n, radius) {
+            glColor3f(r_col, g, b);
+            glBegin(GL_TRIANGLE_FAN);
+            let move = Math.PI * 2 / n;
+            for (let i = 0; i <= n; i++) {
+                let degree = i * move;
+                let x = radius * Math.cos(degree);
+                let y = radius * Math.sin(degree);
+                glVertex3f(x, y, 0);
+            }
+            glEnd();
+        }
+
+        function Triangle(r, g, b, Points) {
+            glColor3f(r, g, b);
+            glBegin(GL_TRIANGLES);
+            glVertex3f(Points[0][0], Points[0][1], Points[0][2]);
+            glVertex3f(Points[1][0], Points[1][1], Points[1][2]);
+            glVertex3f(Points[2][0], Points[2][1], Points[2][2]);
+            glEnd();
+        }
+
+        function Triangle1Side(r, g, b, n, radius, h) {
+            let move = Math.PI * 2 / n;
+            for (let i = 0; i < n; i++) {
+                let deg1 = i * move;
+                let deg2 = (i + 1) * move;
+                
+                const Points = [
+                    [radius * Math.cos(deg1), radius * Math.sin(deg1), 0],
+                    [radius * Math.cos(deg2), radius * Math.sin(deg2), 0],
+                    [0, 0, h]
+                ];
+                Triangle(r + i/n, g + i/(2*n), b + i/(3*n), Points);
+            }
+        }
+
+        function Piramida(scale, n, r, h) {
+            glPushMatrix();
+            glScalef(scale, scale, scale);
+            Poly(0.6, 0.6, 0.6, n, r); 
+            Triangle1Side(0.5, 0.5, 0.5, n, r, h); 
+            glPopMatrix();
+        }
+
+        function display() {
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glLoadIdentity();
+            glRotatef(rotateZ, 0, 0, 1);
+            glRotatef(rotateY, 0, 1, 0);
+            glRotatef(rotateX, 1, 0, 0);
+            
+            Piramida(1, 13, 0.5, 0.8);
+        }
+
+        function initGL() {
+            glMatrixMode(GL_PROJECTION);
+            glOrtho(-1, 1, -1, 1, -1, 1);
+            glMatrixMode(GL_MODELVIEW);
+            glEnable(GL_DEPTH_TEST);
+            glClearColor(0, 0, 0, 1);
+        }
+
+        function doKeyDown(evt) {
+            let key = evt.keyCode;
+            if (key == 37) rotateY -= 15;
+            else if (key == 39) rotateY += 15;
+            else if (key == 40) rotateX += 15;
+            else if (key == 38) rotateX -= 15;
+            else if (key == 33) rotateZ += 15;
+            else if (key == 34) rotateZ -= 15;
+            else if (key == 36) rotateX = rotateY = rotateZ = 0;
+            display();
+        }
+
+        function init() {
+            try { glsimUse("glcanvas"); } 
+            catch (e) { alert("Błąd OpenGL"); return; }
+            document.onkeydown = doKeyDown;
+            initGL();
+            display();
+        }
+    </script>
+</head>
+<body onload="init()">
+    <h3>Piramida 13-kątna</h3>
+    <canvas id="glcanvas" width="500" height="500"></canvas>
+</body>
+</html>

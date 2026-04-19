@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Korkociąg 13-zwojowy - OpenGL 1.1</title>
+    <script src="glsim.js"></script>
+    <script>
+        let rotateX = 15;
+        let rotateY = -15;
+        let rotateZ = 0;
+
+        function Korkociag(scale, n, r, h) {
+            glPushMatrix();
+            glScalef(scale, scale, scale);
+            glColor3f(0.6, 0.7, 0.6); 
+            glBegin(GL_LINE_STRIP);
+            
+            let totalDegrees = 360 * n; 
+            let stepR = r / totalDegrees;
+            let stepH = h / totalDegrees;
+            let radius = 0;
+
+            for (let degree = 0; degree < totalDegrees; degree += 2) {
+                let rad = degree * Math.PI / 180;
+                let x = Math.cos(rad) * radius;
+                let y = Math.sin(rad) * radius;
+                let z = stepH * degree;
+                
+                glVertex3f(x, y, z);
+                radius += stepR * 2;
+            }
+            glEnd();
+            glPopMatrix();
+        }
+
+        function display() {
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glLoadIdentity();
+            glRotatef(rotateZ, 0, 0, 1);
+            glRotatef(rotateY, 0, 1, 0);
+            glRotatef(rotateX, 1, 0, 0);
+            Korkociag(1, 13, 0.8, 1.2);
+        }
+
+        function initGL() {
+            glMatrixMode(GL_PROJECTION);
+            glOrtho(-1, 1, -1, 1, -1, 1);
+            glMatrixMode(GL_MODELVIEW);
+            glEnable(GL_DEPTH_TEST);
+            glClearColor(0.05, 0.05, 0.05, 1); 
+        }
+
+        function doKeyDown(evt) {
+            let key = evt.keyCode;
+            if (key == 37) rotateY -= 15;
+            else if (key == 39) rotateY += 15;
+            else if (key == 40) rotateX += 15;
+            else if (key == 38) rotateX -= 15;
+            display();
+        }
+
+        function init() {
+            try { glsimUse("glcanvas"); } 
+            catch (e) { alert("Błąd OpenGL"); return; }
+            document.onkeydown = doKeyDown;
+            initGL();
+            display();
+        }
+    </script>
+</head>
+<body onload="init()">
+    <h3>Korkociąg (13 obrotów)</h3>
+    <canvas id="glcanvas" width="500" height="500"></canvas>
+</body>
+</html>
