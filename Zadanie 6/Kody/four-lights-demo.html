@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Piramida 13-kątna ze zmienionym światłem i kulkami</title>
+    <link rel="stylesheet" href="../demo.css">
+    <script src="../script/demo-core.js"></script>
+    <script src="../script/glsim.js"></script>
+    <script>
+
+        var camera;
+        var animate;
+        var drawBase;
+        var ambientLight;
+        var viewpointLight, redLight, blueLight, greenLight;
+
+        var animating = false;
+        var frameNumber = 0;
+
+        function drawPyramid(n, radius, h) {
+            var move = Math.PI * 2 / n;
+            glNormal3d(0, 0, -1);
+            glBegin(GL_TRIANGLE_FAN);
+            for (var i = 0; i <= n; i++) {
+                var degree = i * move;
+                glVertex3f(radius * Math.cos(degree), radius * Math.sin(degree), 0);
+            }
+            glEnd();
+
+            for (var i = 0; i < n; i++) {
+                var deg1 = i * move;
+                var deg2 = (i + 1) * move;
+                var midDeg = (deg1 + deg2) / 2;
+                glNormal3d(Math.cos(midDeg), Math.sin(midDeg), 0.5);
+                glBegin(GL_TRIANGLES);
+                glVertex3f(radius * Math.cos(deg1), radius * Math.sin(deg1), 0);
+                glVertex3f(radius * Math.cos(deg2), radius * Math.sin(deg2), 0);
+                glVertex3f(0, 0, h);
+                glEnd();
+            }
+        }
+
+        function uvSphere(radius, slices, stacks) {
+            var i, j;
+            for (j = 0; j < stacks; j++) {
+                var latitude1 = (Math.PI / stacks) * j - Math.PI / 2;
+                var latitude2 = (Math.PI / stacks) * (j + 1) - Math.PI / 2;
+                glBegin(GL_TRIANGLE_STRIP);
+                for (i = 0; i <= slices; i++) {
+                    var longitude = (2 * Math.PI / slices) * i;
+                    var x1 = Math.cos(longitude) * Math.cos(latitude1);
+                    var y1 = Math.sin(longitude) * Math.cos(latitude1);
+                    var z1 = Math.sin(latitude1);
+                    var x2 = Math.cos(longitude) * Math.cos(latitude2);
+                    var y2 = Math.sin(longitude) * Math.cos(latitude2);
+                    var z2 = Math.sin(latitude2);
+                    glNormal3d(x2, y2, z2); glVertex3d(radius * x2, radius * y2, radius * z2);
+                    glNormal3d(x1, y1, z1); glVertex3d(radius * x1, radius * y1, radius * z1);
+                }
+                glEnd();
+            }
+        }
+
+        function drawSolidCylinder(radius, height) {
+            var slices = 64;
+            glBegin(GL_TRIANGLE_STRIP);
+            for (var i = 0; i <= slices; i++) {
+                var angle = 2 * Math.PI / slices * i;
+                var x = Math.cos(angle);
+                var y = Math.sin(angle);
+                glNormal3d(x, y, 0);
+                glVertex3d(radius * x, radius * y, height / 2);
+                glVertex3d(radius * x, radius * y, -height / 2);
+            }
+            glEnd();
+            glNormal3d(0, 0, 1);
+            glBegin(GL_TRIANGLE_FAN);
+            glVertex3d(0, 0, height / 2);
+            for (var i = 0; i <= slices; i++) {
+                var angle = 2 * Math.PI / slices * i;
+                glVertex3d(radius * Math.cos(angle), radius * Math.sin(angle), height / 2);
+            }
+            glEnd();
+            glNormal3d(0, 0, -1);
+            glBegin(GL_TRIANGLE_FAN);
+            glVertex3d(0, 0, -height / 2);
+            for (var i = 0; i <= slices; i++) {
+                var angle = 2 * Math.PI / slices * i;
+                glVertex3d(radius * Math.cos(angle), radius * Math.sin(angle), -height / 2);
+            }
+            glEnd();
+        }
+
+        function lights() {
+            var zero = [0, 0, 0, 1];
+            if (viewpointLight.checked) glEnable(GL_LIGHT0); else glDisable(GL_LIGHT0);
+
+            if (redLight.checked) {
+                glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, [0.5, 0, 0, 1]);
+                glEnable(GL_LIGHT1);
+            } else {
+                glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, zero); glDisable(GL_LIGHT1);
+            }
+            glPushMatrix();
+            glRotated(-frameNumber, 0, 1, 0);
+            glTranslated(10, 7, 0);
+            glLightfv(GL_LIGHT1, GL_POSITION, zero);
+            uvSphere(0.5, 16, 8);
+            glPopMatrix();
+
+            if (greenLight.checked) {
+                glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, [0, 0.5, 0, 1]);
+                glEnable(GL_LIGHT2);
+            } else {
+                glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, zero); glDisable(GL_LIGHT2);
+            }
+            glPushMatrix();
+            glRotated((frameNumber + 100) * 0.8743, 0, 1, 0);
+            glTranslated(9, 8, 0);
+            glLightfv(GL_LIGHT2, GL_POSITION, zero);
+            uvSphere(0.5, 16, 8);
+            glPopMatrix();
+
+            if (blueLight.checked) {
+                glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, [0.5, 0.5, 0, 1]);
+                glEnable(GL_LIGHT3);
+            } else {
+                glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, zero); glDisable(GL_LIGHT3);
+            }
+            glPushMatrix();
+            glRotated((frameNumber - 100) * 1.3057, 0, 1, 0);
+            glTranslated(9.5, 7.5, 0);
+            glLightfv(GL_LIGHT3, GL_POSITION, zero);
+            uvSphere(0.5, 16, 8);
+            glPopMatrix();
+
+            glPushMatrix();
+            glRotated(frameNumber * 0.8, 1, 1, 0);
+            glTranslated(0, 8, 8);
+            glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, [0.4, 0.4, 0.4, 1]);
+            uvSphere(0.6, 16, 8);
+            glPopMatrix();
+
+            glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, zero);
+        }
+
+        function display() {
+            glClearColor(0, 0, 0, 1);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            camera.apply();
+            lights();
+
+            if (ambientLight.checked) {
+                glLightModelfv(GL_LIGHT_MODEL_AMBIENT, [0.15, 0.15, 0.15, 1]);
+            } else {
+                glLightModelfv(GL_LIGHT_MODEL_AMBIENT, [0, 0, 0, 1]);
+            }
+
+            if (drawBase.checked) {
+                glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, [0.2, 0.2, 0.2, 1]);
+                glColor3d(0.4, 0.4, 0.4); 
+                glPushMatrix();
+                glTranslated(0, -4.5, 0); 
+                glRotated(-90, 1, 0, 0);
+                drawSolidCylinder(8, 1);
+                glPopMatrix();
+            }
+
+            glColor3d(0.7, 0.7, 0.7);
+            glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, [0.4, 0.4, 0.4, 1]);
+            glPushMatrix();
+            glTranslated(0, -4.0, 0);
+            glRotated(-90, 1, 0, 0);
+            glScaled(6, 6, 6);
+            drawPyramid(13, 1, 1.2);
+            glPopMatrix();
+        }
+
+        function initGL() {
+            glEnable(GL_DEPTH_TEST);
+            glEnable(GL_LIGHTING);
+            glEnable(GL_NORMALIZE);
+            glEnable(GL_COLOR_MATERIAL);
+            glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, 1);
+            glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, 64);
+
+            glLightfv(GL_LIGHT0, GL_DIFFUSE, [0.5, 0.5, 0.5, 1]);
+            glLightfv(GL_LIGHT1, GL_DIFFUSE, [0.5, 0, 0, 1]);
+            glLightfv(GL_LIGHT2, GL_DIFFUSE, [0, 0.5, 0, 1]);
+            glLightfv(GL_LIGHT3, GL_DIFFUSE, [0.5, 0.5, 0, 1]);
+        }
+
+        function doFrame() {
+            if (animating) { frameNumber++; display(); setTimeout(doFrame, 30); }
+        }
+
+        function init() {
+            try { glsimUse("maincanvas"); } catch (e) {
+                document.getElementById("canvas-holder").innerHTML = "<p><b>Error: " + e + "</b></p>";
+                return;
+            }
+            animate = document.getElementById("animate");
+            drawBase = document.getElementById("drawBase");
+            ambientLight = document.getElementById("ambientLight");
+            viewpointLight = document.getElementById("viewpointLight");
+            redLight = document.getElementById("redLight");
+            blueLight = document.getElementById("blueLight");
+            greenLight = document.getElementById("greenLight");
+
+            animate.onchange = function () {
+                animating = animate.checked;
+                if (animating) doFrame();
+            }
+
+            initGL();
+            camera = new Camera();
+            camera.lookAt(5, 10, 30, 0, 0, 0, 0, 1, 0);
+            camera.setScale(15);
+            camera.installTrackball(display);
+            display();
+        }
+
+    </script>
+</head>
+<body onload="init()">
+    <div id="content">
+        <h3 id="headline">Piramida 13-kątna na pełnej podstawce</h3>
+        <div id="canvas-holder">
+            <canvas id="maincanvas" width="500" height="500"></canvas>
+        </div>
+        <div id="tools">
+            <p>
+                <label><input type="checkbox" id="animate">Animate</label><br><br>
+                <label><input type="checkbox" id="drawBase" checked>Draw Base</label><br><br>
+                <label><input type="checkbox" id="ambientLight" checked>Global Ambient</label><br>
+                <label><input type="checkbox" id="viewpointLight" checked>Viewpoint Light</label><br>
+                <label><input type="checkbox" id="redLight" checked>Red Light</label><br>
+                <label><input type="checkbox" id="greenLight" checked>Green Light</label><br>
+                <label><input type="checkbox" id="blueLight" checked>Yellow Light</label>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
